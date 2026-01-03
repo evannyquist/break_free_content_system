@@ -226,10 +226,13 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                 onClick={() => setSelectedImage(image)}
               >
                 {/* Image */}
-                <div className="aspect-square bg-slate-800 relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-slate-600 text-xs">Image</span>
-                  </div>
+                <div className="aspect-square bg-slate-800 relative overflow-hidden">
+                  <img
+                    src={`/api/library/image/${image.id}`}
+                    alt={image.filename}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
 
                   {/* Badges */}
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -293,8 +296,13 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
             >
               <Card variant="bordered" className="flex items-center gap-4">
                 {/* Thumbnail */}
-                <div className="w-16 h-16 rounded-lg bg-slate-800 flex-shrink-0 flex items-center justify-center">
-                  <span className="text-slate-600 text-xs">IMG</span>
+                <div className="w-16 h-16 rounded-lg bg-slate-800 flex-shrink-0 overflow-hidden">
+                  <img
+                    src={`/api/library/image/${image.id}`}
+                    alt={image.filename}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
 
                 {/* Caption */}
@@ -414,16 +422,55 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                   </button>
                 </div>
 
-                <div className="aspect-video bg-slate-800 rounded-lg mb-4 flex items-center justify-center">
-                  <span className="text-slate-500">Image Preview</span>
+                <div className="aspect-video bg-slate-800 rounded-lg mb-4 overflow-hidden">
+                  <img
+                    src={`/api/library/image/${selectedImage.id}`}
+                    alt={selectedImage.filename}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-400 mb-1">
-                      Extracted Caption
+                      Caption
                     </label>
-                    <p className="text-slate-200">{selectedImage.extractedCaption}</p>
+                    {editingId === selectedImage.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editingCaption}
+                          onChange={(e) => setEditingCaption(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          rows={3}
+                          autoFocus
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingId(null)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={async () => {
+                              await handleSaveCaption(selectedImage.id);
+                              setSelectedImage({
+                                ...selectedImage,
+                                extractedCaption: editingCaption,
+                                manuallyVerified: true,
+                              });
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-slate-200">{selectedImage.extractedCaption}</p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-4">
@@ -468,16 +515,15 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                     >
                       {selectedImage.isFavorite ? 'Unfavorite' : 'Favorite'}
                     </Button>
-                    <Button
-                      variant="secondary"
-                      leftIcon={<Edit3 className="h-4 w-4" />}
-                      onClick={() => {
-                        handleEditCaption(selectedImage);
-                        setSelectedImage(null);
-                      }}
-                    >
-                      Edit Caption
-                    </Button>
+                    {editingId !== selectedImage.id && (
+                      <Button
+                        variant="secondary"
+                        leftIcon={<Edit3 className="h-4 w-4" />}
+                        onClick={() => handleEditCaption(selectedImage)}
+                      >
+                        Edit Caption
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
