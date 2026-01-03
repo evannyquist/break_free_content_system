@@ -19,6 +19,9 @@ import {
   Eye,
   Grid,
   List,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button, Card, Input, Badge, EmptyState, Spinner } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -33,6 +36,7 @@ interface LibraryGalleryProps {
 export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGalleryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterConfidence, setFilterConfidence] = useState<'all' | 'high' | 'low'>('all');
+  const [filterVerification, setFilterVerification] = useState<'all' | 'verified' | 'unverified'>('all');
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -66,8 +70,20 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
       return false;
     }
 
+    // Verification filter
+    if (filterVerification === 'verified' && !img.manuallyVerified) {
+      return false;
+    }
+    if (filterVerification === 'unverified' && img.manuallyVerified) {
+      return false;
+    }
+
     return true;
   });
+
+  // Calculate verification stats
+  const verifiedCount = images.filter((img) => img.manuallyVerified).length;
+  const unverifiedCount = images.length - verifiedCount;
 
   const handleEditCaption = (image: LibraryImage) => {
     setEditingId(image.id);
@@ -120,6 +136,121 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
     }
   };
 
+  // Mark image as verified without changing caption
+  const handleVerify = async (id: string) => {
+    try {
+      await fetch('/api/library', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          updates: { manuallyVerified: true },
+        }),
+      });
+      onRefresh?.();
+    } catch (error) {
+      console.error('Failed to verify image:', error);
+    }
+  };
+
+  // Navigate to next/previous image in filtered list
+  const navigateImage = (direction: 'next' | 'prev') => {
+    if (!selectedImage) return;
+
+    const currentIndex = filteredImages.findIndex((img) => img.id === selectedImage.id);
+    if (currentIndex === -1) return;
+
+    let newIndex: number;
+    if (direction === 'next') {
+      newIndex = currentIndex + 1 >= filteredImages.length ? 0 : currentIndex + 1;
+    } else {
+      newIndex = currentIndex - 1 < 0 ? filteredImages.length - 1 : currentIndex - 1;
+    }
+
+    const newImage = filteredImages[newIndex];
+    setSelectedImage(newImage);
+    setEditingId(null);
+
+    // Auto-enter edit mode for low confidence unverified images
+    if ((newImage.captionConfidence || 0) < 0.8 && !newImage.manuallyVerified) {
+      setEditingId(newImage.id);
+      setEditingCaption(newImage.extractedCaption || '');
+    }
+  };
+
+  // Verify current image and move to next
+  const handleVerifyAndNext = async () => {
+    if (!selectedImage) return;
+
+    if (editingId === selectedImage.id) {
+      // Save the edited caption first
+      await handleSaveCaption(selectedImage.id);
+      setSelectedImage({
+        ...selectedImage,
+        extractedCaption: editingCaption,
+        manuallyVerified: true,
+      });
+    } else if (!selectedImage.manuallyVerified) {
+      // Just verify without editing
+      await handleVerify(selectedImage.id);
+      setSelectedImage({
+        ...selectedImage,
+        manuallyVerified: true,
+      });
+    }
+
+    // Move to next image
+    navigateImage('next');
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!selectedImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if typing in textarea
+      if (e.target instanceof HTMLTextAreaElement) {
+        // Allow Enter to save and advance when in edit mode
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleVerifyAndNext();
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          navigateImage('prev');
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          navigateImage('next');
+          break;
+        case 'Enter':
+          e.preventDefault();
+          handleVerifyAndNext();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setSelectedImage(null);
+          setEditingId(null);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage, editingId, editingCaption, filteredImages]);
+
+  // Auto-enter edit mode when opening low confidence image
+  useEffect(() => {
+    if (selectedImage && (selectedImage.captionConfidence || 0) < 0.8 && !selectedImage.manuallyVerified) {
+      setEditingId(selectedImage.id);
+      setEditingCaption(selectedImage.extractedCaption || '');
+    }
+  }, [selectedImage?.id]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -157,6 +288,16 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
 
         {/* Filters */}
         <div className="flex items-center gap-2">
+          <select
+            value={filterVerification}
+            onChange={(e) => setFilterVerification(e.target.value as 'all' | 'verified' | 'unverified')}
+            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-200"
+          >
+            <option value="all">All Captions</option>
+            <option value="verified">Verified</option>
+            <option value="unverified">Needs Review</option>
+          </select>
+
           <select
             value={filterConfidence}
             onChange={(e) => setFilterConfidence(e.target.value as 'all' | 'high' | 'low')}
@@ -203,10 +344,23 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
         </div>
       </div>
 
-      {/* Results Count */}
-      <p className="text-sm text-slate-500">
-        Showing {filteredImages.length} of {images.length} images
-      </p>
+      {/* Results Count & Progress */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">
+          Showing {filteredImages.length} of {images.length} images
+        </p>
+        <div className="flex items-center gap-2">
+          <Badge variant="success" className="flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            {verifiedCount} verified
+          </Badge>
+          {unverifiedCount > 0 && (
+            <Badge variant="warning">
+              {unverifiedCount} to review
+            </Badge>
+          )}
+        </div>
+      </div>
 
       {/* Grid View */}
       {viewMode === 'grid' && (
@@ -236,6 +390,11 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
 
                   {/* Badges */}
                   <div className="absolute top-2 left-2 flex flex-col gap-1">
+                    {image.manuallyVerified && (
+                      <Badge size="sm" variant="success">
+                        <Check className="h-3 w-3" />
+                      </Badge>
+                    )}
                     {image.isFavorite && (
                       <Badge size="sm" variant="brand">
                         <Star className="h-3 w-3 fill-current" />
@@ -404,14 +563,38 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
               className="max-w-2xl w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <Card variant="elevated" padding="lg">
+              <Card variant="elevated" padding="lg" className="relative">
+                {/* Navigation Arrows */}
+                <button
+                  onClick={() => navigateImage('prev')}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors z-10"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={() => navigateImage('next')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors z-10"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-100">
-                      {selectedImage.filename}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-slate-100">
+                        {selectedImage.filename}
+                      </h3>
+                      {selectedImage.manuallyVerified && (
+                        <Badge variant="success" size="sm" className="flex items-center gap-1">
+                          <Check className="h-3 w-3" />
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-500">
                       Uploaded {new Date(selectedImage.uploadedAt).toLocaleDateString()}
+                      {' · '}
+                      {filteredImages.findIndex((img) => img.id === selectedImage.id) + 1} of {filteredImages.length}
                     </p>
                   </div>
                   <button
@@ -498,32 +681,49 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                     )}
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
-                    <Button
-                      variant="ghost"
-                      leftIcon={
-                        <Star
-                          className={cn(
-                            'h-4 w-4',
-                            selectedImage.isFavorite && 'fill-yellow-400 text-yellow-400'
-                          )}
-                        />
-                      }
-                      onClick={() =>
-                        handleToggleFavorite(selectedImage.id, selectedImage.isFavorite)
-                      }
-                    >
-                      {selectedImage.isFavorite ? 'Unfavorite' : 'Favorite'}
-                    </Button>
-                    {editingId !== selectedImage.id && (
+                  <div className="flex justify-between items-center pt-4 border-t border-slate-800">
+                    <p className="text-xs text-slate-600">
+                      ← → Navigate · Enter Verify & Next · Esc Close
+                    </p>
+                    <div className="flex gap-2">
                       <Button
-                        variant="secondary"
-                        leftIcon={<Edit3 className="h-4 w-4" />}
-                        onClick={() => handleEditCaption(selectedImage)}
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={
+                          <Star
+                            className={cn(
+                              'h-4 w-4',
+                              selectedImage.isFavorite && 'fill-yellow-400 text-yellow-400'
+                            )}
+                          />
+                        }
+                        onClick={() =>
+                          handleToggleFavorite(selectedImage.id, selectedImage.isFavorite)
+                        }
                       >
-                        Edit Caption
+                        {selectedImage.isFavorite ? 'Unfavorite' : 'Favorite'}
                       </Button>
-                    )}
+                      {editingId !== selectedImage.id && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<Edit3 className="h-4 w-4" />}
+                          onClick={() => handleEditCaption(selectedImage)}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                      {!selectedImage.manuallyVerified && editingId !== selectedImage.id && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          leftIcon={<Check className="h-4 w-4" />}
+                          onClick={() => handleVerifyAndNext()}
+                        >
+                          Verify & Next
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
