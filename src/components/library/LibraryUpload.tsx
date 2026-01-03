@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Loader2,
   FileImage,
+  Copy,
 } from 'lucide-react';
 import { Button, Card, Progress, Badge } from '@/components/ui';
 import { useLibraryStore } from '@/store';
@@ -118,10 +119,11 @@ interface UploadedFile {
   originalSize?: number;
   compressed?: boolean;
   preview: string;
-  status: 'pending' | 'compressing' | 'uploading' | 'processing' | 'complete' | 'error';
+  status: 'pending' | 'compressing' | 'uploading' | 'processing' | 'complete' | 'error' | 'duplicate';
   extractedCaption?: string;
   confidence?: number;
   error?: string;
+  duplicateOf?: string; // Filename of existing duplicate
 }
 
 export function LibraryUpload() {
@@ -266,6 +268,18 @@ export function LibraryUpload() {
               };
             }
           });
+
+          // Handle duplicates
+          data.duplicates?.forEach((dup: { filename: string; existingFilename: string }) => {
+            const idx = results.findIndex((f) => f.file.name === dup.filename && f.status === 'uploading');
+            if (idx >= 0) {
+              results[idx] = {
+                ...results[idx],
+                status: 'duplicate',
+                duplicateOf: dup.existingFilename,
+              };
+            }
+          });
         } else {
           batch.forEach((item) => {
             const idx = results.findIndex(r => r.file.name === item.file.name);
@@ -319,6 +333,7 @@ export function LibraryUpload() {
   const successCount = files.filter((f) => f.status === 'complete').length;
   const errorCount = files.filter((f) => f.status === 'error').length;
   const pendingCount = files.filter((f) => f.status === 'pending').length;
+  const duplicateCount = files.filter((f) => f.status === 'duplicate').length;
 
   return (
     <div className="space-y-6">
@@ -382,6 +397,9 @@ export function LibraryUpload() {
                 {successCount > 0 && (
                   <Badge variant="success">{successCount} processed</Badge>
                 )}
+                {duplicateCount > 0 && (
+                  <Badge variant="warning">{duplicateCount} skipped (duplicates)</Badge>
+                )}
                 {errorCount > 0 && (
                   <Badge variant="error">{errorCount} failed</Badge>
                 )}
@@ -436,7 +454,8 @@ export function LibraryUpload() {
                     padding="none"
                     className={cn(
                       'overflow-hidden aspect-square',
-                      item.status === 'error' && 'border-red-500/50'
+                      item.status === 'error' && 'border-red-500/50',
+                      item.status === 'duplicate' && 'border-amber-500/50'
                     )}
                   >
                     {/* Image Preview */}
@@ -455,7 +474,8 @@ export function LibraryUpload() {
                         item.status === 'uploading' && 'bg-slate-900/70',
                         item.status === 'processing' && 'bg-slate-900/70',
                         item.status === 'complete' && 'bg-emerald-900/30',
-                        item.status === 'error' && 'bg-red-900/50'
+                        item.status === 'error' && 'bg-red-900/50',
+                        item.status === 'duplicate' && 'bg-amber-900/50'
                       )}
                     >
                       {item.status === 'compressing' && (
@@ -484,6 +504,12 @@ export function LibraryUpload() {
                         <div className="text-center p-2">
                           <AlertCircle className="h-6 w-6 text-red-400 mx-auto mb-1" />
                           <p className="text-xs text-red-300">{item.error}</p>
+                        </div>
+                      )}
+                      {item.status === 'duplicate' && (
+                        <div className="text-center p-2">
+                          <Copy className="h-6 w-6 text-amber-400 mx-auto mb-1" />
+                          <p className="text-xs text-amber-300">Already in library</p>
                         </div>
                       )}
                     </div>

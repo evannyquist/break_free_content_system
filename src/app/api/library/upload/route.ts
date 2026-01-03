@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { extractCaptionFromImage, analyzeImageTheme } from '@/lib/claude-service';
-import { saveLibraryImages, initializeDataDirectory } from '@/lib/storage-service';
+import { saveLibraryImages, initializeDataDirectory, findDuplicate, computeContentHash } from '@/lib/storage-service';
 import type { LibraryImage } from '@/types';
 import { generateId } from '@/lib/utils';
 
@@ -27,21 +27,36 @@ export async function POST(request: NextRequest) {
 
     const results: LibraryImage[] = [];
     const errors: Array<{ filename: string; error: string }> = [];
+    const duplicates: Array<{ filename: string; existingFilename: string }> = [];
 
     // Process images in batches to avoid rate limits
     const batchSize = 3;
     for (let i = 0; i < files.length; i += batchSize) {
       const batch = files.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (file) => {
         try {
-          // Convert file to base64
+          // Convert file to buffer and base64
           const arrayBuffer = await file.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString('base64');
-          
+          const buffer = Buffer.from(arrayBuffer);
+          const base64 = buffer.toString('base64');
+
+          // Compute content hash for duplicate detection
+          const contentHash = computeContentHash(buffer);
+
+          // Check for duplicates by filename or content hash
+          const existingImage = await findDuplicate(file.name, contentHash);
+          if (existingImage) {
+            duplicates.push({
+              filename: file.name,
+              existingFilename: existingImage.filename,
+            });
+            return null; // Skip duplicate
+          }
+
           // Determine media type
           const mediaType = file.type as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
-          
+
           // Extract caption using Claude's vision API
           const { caption, confidence } = await extractCaptionFromImage(
             base64,
@@ -53,6 +68,7 @@ export async function POST(request: NextRequest) {
             id: generateId(),
             filename: file.name,
             filepath: '', // Will be set when saved
+            contentHash, // Store hash for future duplicate detection
             extractedCaption: caption,
             captionConfidence: confidence,
             manuallyVerified: false,
@@ -89,6 +105,7 @@ export async function POST(request: NextRequest) {
       success: true,
       processed: results.length,
       failed: errors.length,
+      duplicatesSkipped: duplicates.length,
       images: results.map((img) => ({
         id: img.id,
         filename: img.filename,
@@ -96,6 +113,7 @@ export async function POST(request: NextRequest) {
         captionConfidence: img.captionConfidence,
       })),
       errors,
+      duplicates,
     });
   } catch (error) {
     console.error('Library upload error:', error);

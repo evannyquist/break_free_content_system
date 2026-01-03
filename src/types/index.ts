@@ -4,6 +4,7 @@ export interface LibraryImage {
   id: string;
   filename: string;
   filepath: string;
+  contentHash?: string; // MD5 hash for duplicate detection
   extractedCaption: string;
   captionConfidence: number; // 0-1 scale
   manuallyVerified: boolean;

@@ -12,6 +12,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 import type {
   LibraryImage,
   BrandVoiceProfile,
@@ -108,7 +109,12 @@ export async function saveLibraryImage(image: LibraryImage): Promise<void> {
     const imagePath = path.join(PATHS.libraryImages, image.filename);
     const buffer = Buffer.from(image.base64, 'base64');
     await fs.writeFile(imagePath, buffer);
-    
+
+    // Compute content hash if not already set
+    if (!image.contentHash) {
+      image.contentHash = computeContentHash(buffer);
+    }
+
     // Remove base64 from the index entry to save space
     delete image.base64;
     image.filepath = imagePath;
@@ -117,7 +123,7 @@ export async function saveLibraryImage(image: LibraryImage): Promise<void> {
   // Update the index
   const images = await getLibraryImages();
   const existingIndex = images.findIndex((img) => img.id === image.id);
-  
+
   if (existingIndex >= 0) {
     images[existingIndex] = image;
   } else {
@@ -135,14 +141,19 @@ export async function saveLibraryImage(image: LibraryImage): Promise<void> {
  */
 export async function saveLibraryImages(newImages: LibraryImage[]): Promise<void> {
   const existingImages = await getLibraryImages();
-  
+
   for (const image of newImages) {
     // Save the image file if base64 is provided
     if (image.base64) {
       const imagePath = path.join(PATHS.libraryImages, image.filename);
       const buffer = Buffer.from(image.base64, 'base64');
       await fs.writeFile(imagePath, buffer);
-      
+
+      // Compute content hash if not already set
+      if (!image.contentHash) {
+        image.contentHash = computeContentHash(buffer);
+      }
+
       // Update filepath and remove base64
       image.filepath = imagePath;
       delete image.base64;
@@ -210,7 +221,7 @@ export async function deleteLibraryImage(id: string): Promise<void> {
 export async function getLibraryImageBase64(id: string): Promise<string | null> {
   const images = await getLibraryImages();
   const image = images.find((img) => img.id === id);
-  
+
   if (image?.filepath) {
     try {
       const buffer = await fs.readFile(image.filepath);
@@ -219,7 +230,60 @@ export async function getLibraryImageBase64(id: string): Promise<string | null> 
       return null;
     }
   }
-  
+
+  return null;
+}
+
+// =====================================
+// Duplicate Detection
+// =====================================
+
+/**
+ * Compute MD5 hash from a buffer
+ */
+export function computeContentHash(buffer: Buffer): string {
+  return crypto.createHash('md5').update(buffer).digest('hex');
+}
+
+/**
+ * Check for duplicate files by filename or content hash
+ * Returns the existing image if a duplicate is found, null otherwise
+ */
+export async function findDuplicate(
+  filename: string,
+  contentHash: string
+): Promise<LibraryImage | null> {
+  const images = await getLibraryImages();
+
+  // Check by filename first
+  const byFilename = images.find((img) => img.filename === filename);
+  if (byFilename) {
+    return byFilename;
+  }
+
+  // Check by content hash
+  const byHash = images.find((img) => img.contentHash === contentHash);
+  if (byHash) {
+    return byHash;
+  }
+
+  // For images without stored hash, compute hash from file and compare
+  for (const img of images) {
+    if (!img.contentHash && img.filepath) {
+      try {
+        const buffer = await fs.readFile(img.filepath);
+        const existingHash = computeContentHash(buffer);
+        if (existingHash === contentHash) {
+          // Backfill the hash for future comparisons
+          await updateLibraryImage(img.id, { contentHash: existingHash });
+          return img;
+        }
+      } catch {
+        // File might not exist, skip
+      }
+    }
+  }
+
   return null;
 }
 
