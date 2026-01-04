@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generateTheme, generateCaptions, regenerateCaption } from '@/lib/claude-service';
+import { generateTheme, generateCaptions, regenerateCaption, generateImageScene } from '@/lib/claude-service';
 import {
-  generateDalleImage,
+  generateFluxImage,
   searchStockPhotos,
   getFallbackImage,
 } from '@/lib/image-service';
@@ -67,21 +67,28 @@ export async function POST(request: NextRequest) {
         // Step 3: Get images
         let images: GeneratedImage[] = [];
         if (mode === 'ai') {
-          // Generate with DALL-E
+          // Generate with Flux Pro 1.1 using emotion-aware scene descriptions
           for (const caption of captions) {
             try {
-              const image = await generateDalleImage(
-                theme,
+              // Step 3a: Generate detailed scene description from Claude
+              const sceneDescription = await generateImageScene(
                 caption.text,
-                profile,
-                settings.imageQuality
+                theme,
+                description,
+                profile
               );
+
+              // Small delay before Flux call
+              await new Promise((resolve) => setTimeout(resolve, 300));
+
+              // Step 3b: Generate image with Flux Pro 1.1 using the scene description
+              const image = await generateFluxImage(sceneDescription);
               images.push(image);
             } catch (error) {
-              console.error('DALL-E generation failed:', error);
+              console.error('Image generation failed:', error);
               images.push(getFallbackImage(theme));
             }
-            // Delay between DALL-E calls
+            // Delay between generations
             await new Promise((resolve) => setTimeout(resolve, 500));
           }
         } else {
@@ -237,12 +244,16 @@ async function handleRegeneration(
 
     let newImage: GeneratedImage;
     if (carousel.imageMode === 'ai') {
-      newImage = await generateDalleImage(
-        carousel.theme,
+      // Generate emotion-aware scene description first
+      const sceneDescription = await generateImageScene(
         item.caption.text,
-        profile,
-        settings.imageQuality
+        carousel.theme,
+        carousel.themeDescription,
+        profile
       );
+
+      // Then generate image with Flux Pro 1.1
+      newImage = await generateFluxImage(sceneDescription);
     } else {
       const images = await searchStockPhotos(
         carousel.theme,

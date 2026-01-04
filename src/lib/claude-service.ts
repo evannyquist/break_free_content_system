@@ -466,6 +466,367 @@ Categories: post-run, during-run, gear, weather, race-day, recovery, training, m
   };
 }
 
+/**
+ * Generate a detailed visual scene description for Flux Pro 1.1 based on caption emotion
+ * Optimized for cinematic, vintage film still aesthetic
+ */
+export async function generateImageScene(
+  caption: string,
+  theme: string,
+  themeDescription: string,
+  brandProfile: BrandVoiceProfile | null
+): Promise<string> {
+  const client = getClient();
+
+  const aesthetics = brandProfile?.aestheticPreferences?.slice(0, 3).join(', ') ||
+    'epic, cinematic, surreal';
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 400,
+    messages: [
+      {
+        role: 'user',
+        content: `You are a cinematographer creating scene descriptions for a film still photography AI.
+
+Your goal: Create a scene that looks like a still frame from a movie the viewer hasn't seen before - familiar yet undefinable, with that nostalgic quality of classic cinema.
+
+Caption: "${caption}"
+Theme: "${theme}"
+Theme Style: "${themeDescription}"
+Visual Aesthetics: ${aesthetics}
+
+Analyze the caption's emotional core and translate it into a cinematic scene:
+
+1. EMOTION: What feeling does this caption convey? (triumph, exhaustion, absurdity, determination, relief, dread, humor)
+
+2. SCENE COMPOSITION:
+   - Subject positioning and body language that tells the story
+   - Environment details that reinforce the mood
+   - Lighting direction (golden hour, harsh midday, blue hour, practical lights)
+   - Depth and layers in the frame
+
+3. FILM AESTHETIC:
+   - Reference a film era or director's style subtly (70s New Hollywood, 90s indie, Wes Anderson symmetry, Fincher darkness, Villeneuve scale)
+   - Natural imperfections: lens flares, slight motion, atmospheric haze
+   - Color palette that evokes memory and nostalgia
+
+Output ONLY the scene description (3-4 sentences). Be specific about what's IN the frame.
+- Feature ${theme} elements prominently
+- The scene should feel like a real moment captured, not posed
+- Include environmental storytelling details
+- NO text, words, signs, or writing visible in the scene
+
+Example for "conquering that hill that destroyed me last month" with medieval knights theme:
+"A lone knight stands atop a windswept ridge at magic hour, armor dulled and dented from countless battles. He faces away from camera, looking out over the valley he's just climbed, one hand resting on his planted sword. The warm golden light catches the dust and mist swirling around him while dark storm clouds retreat in the distance. His cape is torn and muddy, but there's triumph in the set of his shoulders."
+
+Now create the scene:`,
+      },
+    ],
+  });
+
+  const responseText = response.content[0].type === 'text'
+    ? response.content[0].text.trim()
+    : '';
+
+  // Clean up any potential formatting issues
+  return responseText.replace(/^["']|["']$/g, '').trim();
+}
+
+/**
+ * Generate a humorous running caption for an image (image-first workflow)
+ * Analyzes what's happening in the image and creates a matching caption
+ */
+export async function generateCaptionForImage(
+  imageBase64: string,
+  brandProfile: BrandVoiceProfile | null,
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/webp'
+): Promise<GeneratedCaption> {
+  const client = getClient();
+
+  // Build few-shot examples from brand profile
+  let examplesContext = '';
+  if (brandProfile && brandProfile.exampleCaptions.length > 0) {
+    const examples = brandProfile.favoritesCaptions.length > 3
+      ? brandProfile.favoritesCaptions.slice(0, 8)
+      : brandProfile.exampleCaptions.slice(0, 8);
+    examplesContext = `
+Here are example captions that match the brand voice:
+${examples.map((c, i) => `${i + 1}. "${c}"`).join('\n')}
+
+The brand voice characteristics:
+- Average length: ${brandProfile.averageCaptionLength} characters
+- Tone: ${brandProfile.toneMarkers.join(', ')}
+- Common patterns: ${brandProfile.jokeStructures.slice(0, 3).join('; ')}
+`;
+  } else {
+    examplesContext = `
+Example captions for reference (Break Free running brand style):
+1. "how it feels walking inside wearing warm clothes after running outside"
+2. "realizing I have no idea how to get back down this trail"
+3. "me convincing myself that one more mile won't hurt"
+4. "when someone asks if I'm training for something"
+5. "the face I make when my watch says 'goal met'"
+6. "me after running in rain that wasn't in the forecast"
+7. "trying to look casual when I pass another runner"
+8. "when the 'easy run' becomes a tempo run"
+`;
+  }
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 500,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mediaType,
+              data: imageBase64,
+            },
+          },
+          {
+            type: 'text',
+            text: `You are a comedy writer for "Break Free", a running brand that creates humorous, relatable Instagram content for runners.
+
+Your task: Look at this image and write a SHORT, PUNCHY caption that a runner would relate to. The caption should connect what's happening in the image to the running experience.
+
+${examplesContext}
+
+ANALYZE THE IMAGE:
+1. What is the subject doing? (pose, expression, action)
+2. What emotion or situation does this convey? (exhaustion, triumph, struggle, confusion, determination)
+3. What running moment does this remind you of?
+
+CAPTION RULES:
+- Start with lowercase (like texting)
+- Keep it SHORT (under 80 characters ideal)
+- Self-deprecating, absurdist humor
+- Reference specific running situations (pace, distance, gear, weather, other runners, etc.)
+- The humor comes from the RELATABLE truth, not trying to be clever
+- Match the EMOTION in the image to a running emotion
+
+Return your response in this EXACT format:
+CAPTION: [your caption here]
+CATEGORY: [one of: post-run, during-run, gear, weather, race-day, recovery, training, motivation, humor]
+EMOTION: [the emotion you identified in the image]`,
+          },
+        ],
+      },
+    ],
+  });
+
+  const responseText = response.content[0].type === 'text'
+    ? response.content[0].text.trim()
+    : '';
+
+  // Parse the response
+  const captionMatch = responseText.match(/CAPTION:\s*(.+)/i);
+  const categoryMatch = responseText.match(/CATEGORY:\s*(.+)/i);
+  const emotionMatch = responseText.match(/EMOTION:\s*(.+)/i);
+
+  const captionText = captionMatch
+    ? captionMatch[1].trim().replace(/^["']|["']$/g, '')
+    : 'me after that run';
+
+  const category = categoryMatch
+    ? categoryMatch[1].trim().toLowerCase() as CaptionCategory
+    : 'humor';
+
+  const emotion = emotionMatch ? emotionMatch[1].trim() : 'relatable';
+
+  // Calculate brand voice score
+  const brandVoiceScore = brandProfile
+    ? calculateBrandScore(captionText, brandProfile)
+    : 70;
+
+  return {
+    id: generateId(),
+    text: captionText,
+    theme: emotion, // Use detected emotion as theme
+    brandVoiceScore,
+    category: isValidCategory(category) ? category : 'humor',
+    regenerationCount: 0,
+  };
+}
+
+/**
+ * Generate multiple caption options for a single image
+ * Each caption takes a different angle (situation, emotion, action)
+ */
+export async function generateMultipleCaptions(
+  imageBase64: string,
+  brandProfile: BrandVoiceProfile | null,
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/webp',
+  count: number = 3
+): Promise<GeneratedCaption[]> {
+  const client = getClient();
+
+  // Build few-shot examples from brand profile
+  let examplesContext = '';
+  if (brandProfile && brandProfile.exampleCaptions.length > 0) {
+    const examples = brandProfile.favoritesCaptions.length > 3
+      ? brandProfile.favoritesCaptions.slice(0, 8)
+      : brandProfile.exampleCaptions.slice(0, 8);
+    examplesContext = `
+Here are example captions that match the brand voice:
+${examples.map((c, i) => `${i + 1}. "${c}"`).join('\n')}
+
+The brand voice characteristics:
+- Average length: ${brandProfile.averageCaptionLength} characters
+- Tone: ${brandProfile.toneMarkers.join(', ')}
+- Common patterns: ${brandProfile.jokeStructures.slice(0, 3).join('; ')}
+`;
+  } else {
+    examplesContext = `
+Example captions for reference (Break Free running brand style):
+1. "how it feels walking inside wearing warm clothes after running outside"
+2. "realizing I have no idea how to get back down this trail"
+3. "me convincing myself that one more mile won't hurt"
+4. "when someone asks if I'm training for something"
+5. "the face I make when my watch says 'goal met'"
+6. "me after running in rain that wasn't in the forecast"
+7. "trying to look casual when I pass another runner"
+8. "when the 'easy run' becomes a tempo run"
+`;
+  }
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 800,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mediaType,
+              data: imageBase64,
+            },
+          },
+          {
+            type: 'text',
+            text: `You are a comedy writer for "Break Free", a running brand that creates humorous, relatable Instagram content for runners.
+
+Your task: Look at this image and write ${count} DIFFERENT caption options. Each caption should connect what's happening in the image to the running experience, but from different angles.
+
+${examplesContext}
+
+ANALYZE THE IMAGE:
+1. What is the subject doing? (pose, expression, action)
+2. What emotion or situation does this convey?
+3. What running moments could this remind someone of?
+
+CAPTION RULES:
+- Start with lowercase (like texting)
+- Keep it SHORT (under 80 characters ideal)
+- Self-deprecating, absurdist humor
+- Reference specific running situations (pace, distance, gear, weather, other runners, etc.)
+- The humor comes from the RELATABLE truth, not trying to be clever
+- Match the EMOTION in the image to a running emotion
+
+Generate ${count} distinct captions, each taking a DIFFERENT angle:
+- CAPTION_1: Focus on the SITUATION (what's happening)
+- CAPTION_2: Focus on the EMOTION (how they feel)
+- CAPTION_3: Focus on the ACTION (what they're doing)
+
+Return your response in this EXACT format:
+CAPTION_1: [caption focusing on situation]
+CATEGORY_1: [category]
+CAPTION_2: [caption focusing on emotion]
+CATEGORY_2: [category]
+CAPTION_3: [caption focusing on action]
+CATEGORY_3: [category]
+EMOTION: [the overall emotion you identified]
+
+Categories: post-run, during-run, gear, weather, race-day, recovery, training, motivation, humor`,
+          },
+        ],
+      },
+    ],
+  });
+
+  const responseText = response.content[0].type === 'text'
+    ? response.content[0].text.trim()
+    : '';
+
+  // Parse the response for multiple captions
+  const captions: GeneratedCaption[] = [];
+  const emotionMatch = responseText.match(/EMOTION:\s*(.+)/i);
+  const emotion = emotionMatch ? emotionMatch[1].trim() : 'relatable';
+
+  for (let i = 1; i <= count; i++) {
+    const captionMatch = responseText.match(new RegExp(`CAPTION_${i}:\\s*(.+)`, 'i'));
+    const categoryMatch = responseText.match(new RegExp(`CATEGORY_${i}:\\s*(.+)`, 'i'));
+
+    const captionText = captionMatch
+      ? captionMatch[1].trim().replace(/^["']|["']$/g, '')
+      : `caption option ${i}`;
+
+    const category = categoryMatch
+      ? categoryMatch[1].trim().toLowerCase() as CaptionCategory
+      : 'humor';
+
+    // Calculate brand voice score
+    const brandVoiceScore = brandProfile
+      ? calculateBrandScore(captionText, brandProfile)
+      : 70;
+
+    captions.push({
+      id: generateId(),
+      text: captionText,
+      theme: emotion,
+      brandVoiceScore,
+      category: isValidCategory(category) ? category : 'humor',
+      regenerationCount: 0,
+    });
+  }
+
+  return captions;
+}
+
+/**
+ * Generate captions for multiple images (batch image-first workflow)
+ */
+export async function generateCaptionsForImages(
+  images: Array<{ base64: string; mediaType?: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' }>,
+  brandProfile: BrandVoiceProfile | null
+): Promise<GeneratedCaption[]> {
+  const captions: GeneratedCaption[] = [];
+
+  for (const image of images) {
+    try {
+      const caption = await generateCaptionForImage(
+        image.base64,
+        brandProfile,
+        image.mediaType || 'image/webp'
+      );
+      captions.push(caption);
+
+      // Small delay between API calls
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error('Failed to generate caption for image:', error);
+      // Add a fallback caption
+      captions.push({
+        id: generateId(),
+        text: 'me after that run',
+        theme: 'running',
+        brandVoiceScore: 50,
+        category: 'humor',
+        regenerationCount: 0,
+      });
+    }
+  }
+
+  return captions;
+}
+
 // Helper functions
 
 function calculateBrandScore(caption: string, profile: BrandVoiceProfile): number {

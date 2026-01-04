@@ -81,19 +81,19 @@ export function CarouselPreview({
   return (
     <Card variant="elevated" padding="none" className="overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-4 w-4 text-slate-500" />
-              <span className="text-sm text-slate-400">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-500">
                 {formatDate(carousel.date)}
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-slate-100 capitalize">
+            <h3 className="text-lg font-semibold text-gray-900 capitalize">
               {carousel.theme}
             </h3>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               {carousel.themeDescription}
             </p>
           </div>
@@ -122,7 +122,7 @@ export function CarouselPreview({
       </div>
 
       {/* Main Preview */}
-      <div className="relative aspect-square bg-slate-900">
+      <div className="relative aspect-square bg-gray-100">
         {/* Image */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -139,8 +139,8 @@ export function CarouselPreview({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                <ImageIcon className="h-16 w-16 text-slate-600" />
+              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <ImageIcon className="h-16 w-16 text-gray-400" />
               </div>
             )}
 
@@ -152,7 +152,7 @@ export function CarouselPreview({
                   <Textarea
                     value={editedText}
                     onChange={(e) => setEditedText(e.target.value)}
-                    className="bg-slate-900/90 backdrop-blur"
+                    className="bg-white/90 backdrop-blur text-gray-900"
                     rows={2}
                   />
                   <div className="flex justify-end gap-2">
@@ -173,10 +173,10 @@ export function CarouselPreview({
 
             {/* Regenerating Overlay */}
             {isRegenerating && regeneratingIndex === activeIndex && (
-              <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
                 <div className="text-center">
                   <RefreshCw className="h-8 w-8 text-brand-500 animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-slate-300">Regenerating...</p>
+                  <p className="text-sm text-gray-600">Regenerating...</p>
                 </div>
               </div>
             )}
@@ -186,13 +186,13 @@ export function CarouselPreview({
         {/* Navigation Arrows */}
         <button
           onClick={goToPrevious}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 text-slate-300 hover:bg-slate-800 transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 text-gray-700 hover:bg-white transition-colors shadow-sm"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <button
           onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-900/80 text-slate-300 hover:bg-slate-800 transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 text-gray-700 hover:bg-white transition-colors shadow-sm"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
@@ -215,10 +215,10 @@ export function CarouselPreview({
       </div>
 
       {/* Item Actions */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+      <div className="p-4 border-t border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-gray-500">
               Slide {activeIndex + 1} of {carousel.items.length}
             </span>
             <Badge size="sm" variant="default">
@@ -265,7 +265,7 @@ export function CarouselPreview({
       </div>
 
       {/* Thumbnail Strip */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900/30">
+      <div className="p-4 border-t border-gray-200 bg-gray-50/50">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {carousel.items.map((item, idx) => (
             <button
@@ -275,7 +275,7 @@ export function CarouselPreview({
                 'flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all',
                 idx === activeIndex
                   ? 'border-brand-500 ring-2 ring-brand-500/30'
-                  : 'border-transparent hover:border-slate-600'
+                  : 'border-transparent hover:border-gray-300'
               )}
             >
               {item.image.url ? (
@@ -285,8 +285,8 @@ export function CarouselPreview({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                  <span className="text-xs text-slate-500">{idx + 1}</span>
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-xs text-gray-500">{idx + 1}</span>
                 </div>
               )}
             </button>
@@ -295,10 +295,10 @@ export function CarouselPreview({
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-slate-800 flex items-center justify-between">
-        <div className="text-sm text-slate-500">
+      <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+        <div className="text-sm text-gray-500">
           {carousel.status === 'approved' ? (
-            <span className="flex items-center gap-1 text-emerald-400">
+            <span className="flex items-center gap-1 text-emerald-600">
               <Check className="h-4 w-4" />
               Approved
             </span>

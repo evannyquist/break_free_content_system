@@ -2,11 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom CSS Variables */
+/* Import Jost font */
+@import '@fontsource/jost/400.css';
+@import '@fontsource/jost/400-italic.css';
+@import '@fontsource/jost/700.css';
+@import '@fontsource/jost/700-italic.css';
+
+/* Custom CSS Variables - Light Theme (Cosmos-inspired) */
 :root {
   --font-display: 'Archivo Black', system-ui, sans-serif;
   --font-geist-sans: 'Inter', system-ui, sans-serif;
   --font-geist-mono: 'JetBrains Mono', monospace;
+  --font-jost: 'Jost', 'Futura', 'Century Gothic', sans-serif;
+
+  /* Light theme colors */
+  --background: #ffffff;
+  --background-secondary: #f8f9fa;
+  --background-tertiary: #f1f3f5;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+  --border-subtle: #f3f4f6;
 }
 
 /* Base Styles */
@@ -15,39 +32,36 @@ html {
 }
 
 body {
-  @apply bg-slate-950 text-slate-100 antialiased;
-  background-image: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(236, 117, 27, 0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(236, 117, 27, 0.08), transparent);
+  @apply bg-white text-gray-900 antialiased;
   min-height: 100vh;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Light theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-900;
+  @apply bg-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-700 rounded-full;
+  @apply bg-gray-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-600;
+  @apply bg-gray-400;
 }
 
 /* Selection */
 ::selection {
-  @apply bg-brand-500/30 text-white;
+  @apply bg-brand-500/20 text-gray-900;
 }
 
-/* Focus Styles */
+/* Focus Styles - Light theme */
 :focus-visible {
-  @apply outline-none ring-2 ring-brand-500/50 ring-offset-2 ring-offset-slate-950;
+  @apply outline-none ring-2 ring-brand-500/50 ring-offset-2 ring-offset-white;
 }
 
 /* Custom Animations */
@@ -63,62 +77,60 @@ body {
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0) 100%
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.03) 50%,
+    rgba(0, 0, 0, 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
-/* Noise Texture Overlay */
-.noise-overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.03;
-  pointer-events: none;
-  mix-blend-mode: overlay;
-}
-
 /* Gradient Text */
 .gradient-text {
-  @apply bg-gradient-to-r from-brand-400 via-brand-500 to-amber-400 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-brand-500 via-brand-600 to-amber-500 bg-clip-text text-transparent;
 }
 
-/* Card Hover Effects */
+/* Card Styles - Light theme with subtle shadows */
+.card {
+  @apply bg-white rounded-xl;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.card-bordered {
+  @apply border border-gray-200;
+}
+
+.card-elevated {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
 .card-hover {
   @apply transition-all duration-300;
 }
 
 .card-hover:hover {
-  @apply -translate-y-1 shadow-xl shadow-brand-500/10;
+  @apply -translate-y-0.5;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
-/* Image Container */
+/* Image Container - Light theme */
 .image-container {
-  @apply relative overflow-hidden rounded-lg bg-slate-800;
+  @apply relative overflow-hidden rounded-lg bg-gray-100;
 }
 
 .image-container::before {
   content: '';
-  @apply absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 transition-opacity duration-300;
+  @apply absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity duration-300;
 }
 
 .image-container:hover::before {
   @apply opacity-100;
 }
 
-/* Sidebar Styles */
-.sidebar {
-  @apply bg-slate-900/95 backdrop-blur-xl border-r border-slate-800;
-}
-
 /* Typography */
 .heading-display {
   font-family: var(--font-display);
-  @apply tracking-tight;
+  @apply tracking-tight text-gray-900;
 }
 
 /* Button Press Effect */
@@ -131,49 +143,45 @@ button:active:not(:disabled) {
   @apply fixed bottom-4 right-4 z-50 flex flex-col gap-2;
 }
 
-/* Loading Skeleton */
+/* Loading Skeleton - Light theme */
 .skeleton {
-  @apply bg-slate-800 rounded animate-pulse;
+  @apply bg-gray-200 rounded animate-pulse;
 }
 
-/* Drag and Drop */
+/* Drag and Drop - Light theme */
 .drop-zone {
-  @apply border-2 border-dashed border-slate-700 rounded-xl transition-all duration-300;
+  @apply border-2 border-dashed border-gray-300 rounded-xl transition-all duration-300 bg-gray-50;
 }
 
 .drop-zone.active {
-  @apply border-brand-500 bg-brand-500/10;
+  @apply border-brand-500 bg-brand-50;
 }
 
-/* Code Block */
+/* Code Block - Light theme */
 code {
-  @apply px-1.5 py-0.5 bg-slate-800 rounded text-sm font-mono text-brand-400;
+  @apply px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono text-brand-600;
 }
 
-/* Table Styles */
+/* Table Styles - Light theme */
 table {
   @apply w-full text-sm;
 }
 
 th {
-  @apply text-left font-medium text-slate-400 py-3 px-4 border-b border-slate-800;
+  @apply text-left font-medium text-gray-600 py-3 px-4 border-b border-gray-200 bg-gray-50;
 }
 
 td {
-  @apply py-3 px-4 border-b border-slate-800/50 text-slate-300;
+  @apply py-3 px-4 border-b border-gray-100 text-gray-700;
 }
 
 tr:hover td {
-  @apply bg-slate-800/30;
+  @apply bg-gray-50;
 }
 
-/* Utility Classes */
+/* Utility Classes - Light theme */
 .glass {
-  @apply bg-slate-900/80 backdrop-blur-xl;
-}
-
-.border-glow {
-  box-shadow: 0 0 20px rgba(236, 117, 27, 0.15);
+  @apply bg-white/80 backdrop-blur-xl;
 }
 
 /* Hide scrollbar but keep functionality */
@@ -199,4 +207,87 @@ tr:hover td {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Navigation - Clean minimal style */
+.nav-item {
+  @apply px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors rounded-lg;
+}
+
+.nav-item.active {
+  @apply text-gray-900 bg-gray-100;
+}
+
+/* Minimal Badges - Light theme */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-default {
+  @apply bg-gray-100 text-gray-700;
+}
+
+.badge-brand {
+  @apply bg-brand-100 text-brand-700;
+}
+
+.badge-success {
+  @apply bg-emerald-100 text-emerald-700;
+}
+
+.badge-warning {
+  @apply bg-amber-100 text-amber-700;
+}
+
+.badge-error {
+  @apply bg-red-100 text-red-700;
+}
+
+.badge-info {
+  @apply bg-blue-100 text-blue-700;
+}
+
+/* Buttons - Minimal style */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200;
+}
+
+.btn-primary {
+  @apply bg-gray-900 text-white hover:bg-gray-800;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+
+.btn-ghost {
+  @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100;
+}
+
+/* Input styles - Light theme */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  @apply w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500;
+}
+
+/* Calendar day cells */
+.calendar-day {
+  @apply p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all cursor-pointer;
+}
+
+.calendar-day.has-content {
+  @apply border-brand-200 bg-brand-50/50;
+}
+
+.calendar-day.complete {
+  @apply border-emerald-200 bg-emerald-50/50;
+}
+
+.calendar-day:hover {
+  @apply shadow-md;
 }

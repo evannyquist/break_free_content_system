@@ -276,7 +276,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
         {/* Search */}
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search captions, themes..."
               value={searchQuery}
@@ -291,7 +291,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
           <select
             value={filterVerification}
             onChange={(e) => setFilterVerification(e.target.value as 'all' | 'verified' | 'unverified')}
-            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-200"
+            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700"
           >
             <option value="all">All Captions</option>
             <option value="verified">Verified</option>
@@ -301,7 +301,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
           <select
             value={filterConfidence}
             onChange={(e) => setFilterConfidence(e.target.value as 'all' | 'high' | 'low')}
-            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-200"
+            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700"
           >
             <option value="all">All Confidence</option>
             <option value="high">High Confidence</option>
@@ -317,14 +317,14 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
             Favorites
           </Button>
 
-          <div className="flex items-center border border-slate-700 rounded-lg overflow-hidden">
+          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
               className={cn(
                 'p-2 transition-colors',
                 viewMode === 'grid'
-                  ? 'bg-slate-700 text-slate-100'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-400 hover:text-gray-600'
               )}
             >
               <Grid className="h-4 w-4" />
@@ -334,8 +334,8 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
               className={cn(
                 'p-2 transition-colors',
                 viewMode === 'list'
-                  ? 'bg-slate-700 text-slate-100'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-400 hover:text-gray-600'
               )}
             >
               <List className="h-4 w-4" />
@@ -346,7 +346,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
 
       {/* Results Count & Progress */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-gray-500">
           Showing {filteredImages.length} of {images.length} images
         </p>
         <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                 onClick={() => setSelectedImage(image)}
               >
                 {/* Image */}
-                <div className="aspect-square bg-slate-800 relative overflow-hidden">
+                <div className="aspect-square bg-gray-100 relative overflow-hidden">
                   <img
                     src={`/api/library/image/${image.id}`}
                     alt={image.filename}
@@ -414,7 +414,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                         e.stopPropagation();
                         handleToggleFavorite(image.id, image.isFavorite);
                       }}
-                      className="p-1.5 rounded-full bg-slate-900/80 text-slate-400 hover:text-yellow-400 transition-colors"
+                      className="p-1.5 rounded-full bg-white/80 text-gray-500 hover:text-yellow-500 transition-colors"
                     >
                       <Star
                         className={cn(
@@ -428,7 +428,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
 
                 {/* Caption */}
                 <div className="p-3">
-                  <p className="text-xs text-slate-300 line-clamp-2">
+                  <p className="text-xs text-gray-700 line-clamp-2">
                     {image.extractedCaption || 'No caption extracted'}
                   </p>
                   {image.analyzedTheme && (
@@ -455,7 +455,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
             >
               <Card variant="bordered" className="flex items-center gap-4">
                 {/* Thumbnail */}
-                <div className="w-16 h-16 rounded-lg bg-slate-800 flex-shrink-0 overflow-hidden">
+                <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                   <img
                     src={`/api/library/image/${image.id}`}
                     alt={image.filename}
@@ -491,11 +491,11 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-slate-200 truncate">
+                      <p className="text-sm text-gray-900 truncate">
                         {image.extractedCaption || 'No caption'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-500">{image.filename}</span>
+                        <span className="text-xs text-gray-500">{image.filename}</span>
                         {image.analyzedTheme && (
                           <Badge size="sm">{image.analyzedTheme}</Badge>
                         )}
@@ -518,8 +518,8 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                       className={cn(
                         'p-2 rounded-lg transition-colors',
                         image.isFavorite
-                          ? 'text-yellow-400'
-                          : 'text-slate-500 hover:text-yellow-400'
+                          ? 'text-yellow-500'
+                          : 'text-gray-400 hover:text-yellow-500'
                       )}
                     >
                       <Star
@@ -528,13 +528,13 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                     </button>
                     <button
                       onClick={() => handleEditCaption(image)}
-                      className="p-2 rounded-lg text-slate-500 hover:text-slate-200 transition-colors"
+                      className="p-2 rounded-lg text-gray-400 hover:text-gray-700 transition-colors"
                     >
                       <Edit3 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(image.id)}
-                      className="p-2 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -553,7 +553,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
             onClick={() => setSelectedImage(null)}
           >
             <motion.div
@@ -567,13 +567,13 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                 {/* Navigation Arrows */}
                 <button
                   onClick={() => navigateImage('prev')}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors z-10"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 text-gray-600 hover:text-gray-900 hover:bg-white transition-colors z-10 shadow-sm"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
                 <button
                   onClick={() => navigateImage('next')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors z-10"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 text-gray-600 hover:text-gray-900 hover:bg-white transition-colors z-10 shadow-sm"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
@@ -581,7 +581,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-slate-100">
+                      <h3 className="text-lg font-semibold text-gray-900">
                         {selectedImage.filename}
                       </h3>
                       {selectedImage.manuallyVerified && (
@@ -591,7 +591,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-gray-500">
                       Uploaded {new Date(selectedImage.uploadedAt).toLocaleDateString()}
                       {' · '}
                       {filteredImages.findIndex((img) => img.id === selectedImage.id) + 1} of {filteredImages.length}
@@ -599,13 +599,13 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                   </div>
                   <button
                     onClick={() => setSelectedImage(null)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-slate-200"
+                    className="p-2 rounded-lg text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                <div className="aspect-video bg-slate-800 rounded-lg mb-4 overflow-hidden">
+                <div className="aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden">
                   <img
                     src={`/api/library/image/${selectedImage.id}`}
                     alt={selectedImage.filename}
@@ -615,7 +615,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
                       Caption
                     </label>
                     {editingId === selectedImage.id ? (
@@ -623,7 +623,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                         <textarea
                           value={editingCaption}
                           onChange={(e) => setEditingCaption(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
                           rows={3}
                           autoFocus
                         />
@@ -652,13 +652,13 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                         </div>
                       </div>
                     ) : (
-                      <p className="text-slate-200">{selectedImage.extractedCaption}</p>
+                      <p className="text-gray-900">{selectedImage.extractedCaption}</p>
                     )}
                   </div>
 
                   <div className="flex items-center gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">
                         Confidence
                       </label>
                       <Badge
@@ -673,7 +673,7 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                     </div>
                     {selectedImage.analyzedTheme && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-400 mb-1">
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
                           Theme
                         </label>
                         <Badge>{selectedImage.analyzedTheme}</Badge>
@@ -681,8 +681,8 @@ export function LibraryGallery({ images = [], isLoading, onRefresh }: LibraryGal
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-800">
-                    <p className="text-xs text-slate-600">
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                    <p className="text-xs text-gray-400">
                       ← → Navigate · Enter Verify & Next · Esc Close
                     </p>
                     <div className="flex gap-2">

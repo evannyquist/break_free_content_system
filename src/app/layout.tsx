@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: 'Break Free Content System',
   description: 'Automated content generation for Break Free running brand',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/favicon.svg',
   },
 };
 
@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-slate-950">
+      <body className="min-h-screen bg-white">
         {children}
       </body>
     </html>

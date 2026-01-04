@@ -13,7 +13,15 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'oaidalleapiprodscus.blob.core.windows.net',
+        hostname: 'replicate.delivery',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.replicate.delivery',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.cosmos.so',
       },
     ],
   },

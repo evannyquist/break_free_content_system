@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Zap,
   ExternalLink,
+  Globe,
 } from 'lucide-react';
 import { Button, Card, Badge, Progress, Spinner, EmptyState, Toast } from '@/components/ui';
 import { LibraryUpload } from '@/components/library/LibraryUpload';
@@ -28,15 +29,18 @@ import { LibraryGallery } from '@/components/library/LibraryGallery';
 import { BrandVoiceProfileView } from '@/components/library/BrandVoiceProfile';
 import { CarouselPreview } from '@/components/content/CarouselPreview';
 import { GenerationPanel } from '@/components/content/GenerationPanel';
+import CosmosBrowser from '@/components/cosmos/CosmosBrowser';
+import { WeeklyPlanner } from '@/components/planner';
 import { cn, formatDate } from '@/lib/utils';
 import type {
   LibraryImage,
   BrandVoiceProfile,
   CarouselContent,
   GenerationSettings,
+  WeekPlan,
 } from '@/types';
 
-type Tab = 'dashboard' | 'library' | 'generate' | 'settings';
+type Tab = 'dashboard' | 'planner' | 'library' | 'cosmos' | 'generate' | 'settings';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -248,13 +252,44 @@ export default function HomePage() {
   // Navigation items
   const navItems = [
     { id: 'dashboard' as Tab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'planner' as Tab, label: 'Weekly Planner', icon: Calendar },
     { id: 'library' as Tab, label: 'Library', icon: Library },
+    { id: 'cosmos' as Tab, label: 'Cosmos', icon: Globe },
     { id: 'generate' as Tab, label: 'Generate', icon: Sparkles },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ];
 
+  const handleExportWeek = async (weekPlan: WeekPlan) => {
+    try {
+      const response = await fetch('/api/export/week', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weekPlan }),
+      });
+
+      const data = await response.json();
+      if (data.success && data.zipBase64) {
+        const blob = new Blob(
+          [Uint8Array.from(atob(data.zipBase64), (c) => c.charCodeAt(0))],
+          { type: 'application/zip' }
+        );
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.exportName || 'break-free-week'}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addToast('success', 'Week exported successfully!');
+      } else {
+        addToast('error', data.error || 'Export failed');
+      }
+    } catch (error) {
+      addToast('error', 'Failed to export week');
+    }
+  };
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gray-50">
       {/* Sidebar */}
       <AnimatePresence>
         {(sidebarOpen || !isMobile) && (
@@ -264,25 +299,25 @@ export default function HomePage() {
             exit={{ x: -280 }}
             className={cn(
               'fixed lg:relative z-40 h-screen w-72 flex flex-col',
-              'bg-slate-900/95 backdrop-blur-xl border-r border-slate-800'
+              'bg-white border-r border-gray-200'
             )}
           >
             {/* Logo */}
-            <div className="p-6 border-b border-slate-800">
+            <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center">
                     <Zap className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="font-bold text-slate-100">Break Free</h1>
-                    <p className="text-xs text-slate-500">Content System</p>
+                    <h1 className="font-bold text-gray-900">Break Free</h1>
+                    <p className="text-xs text-gray-500">Content System</p>
                   </div>
                 </div>
                 {isMobile && (
                   <button
                     onClick={() => setSidebarOpen(false)}
-                    className="p-2 text-slate-400 hover:text-slate-200"
+                    className="p-2 text-gray-500 hover:text-gray-900"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -302,8 +337,8 @@ export default function HomePage() {
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
                     activeTab === item.id
-                      ? 'bg-brand-500/20 text-brand-400'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -313,23 +348,23 @@ export default function HomePage() {
             </nav>
 
             {/* Stats */}
-            <div className="p-4 border-t border-slate-800">
-              <div className="p-4 rounded-lg bg-slate-800/50 space-y-3">
+            <div className="p-4 border-t border-gray-200">
+              <div className="p-4 rounded-lg bg-gray-50 space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Library Size</span>
-                  <span className="text-slate-200 font-medium">
+                  <span className="text-gray-500">Library Size</span>
+                  <span className="text-gray-900 font-medium">
                     {libraryImages.length} images
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Carousels</span>
-                  <span className="text-slate-200 font-medium">
+                  <span className="text-gray-500">Carousels</span>
+                  <span className="text-gray-900 font-medium">
                     {carousels.length} generated
                   </span>
                 </div>
                 {brandProfile && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Voice Profile</span>
+                    <span className="text-gray-500">Voice Profile</span>
                     <Badge size="sm" variant="success">Active</Badge>
                   </div>
                 )}
@@ -342,7 +377,7 @@ export default function HomePage() {
       {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/80 z-30"
+          className="fixed inset-0 bg-gray-900/50 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -350,18 +385,18 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Top Bar */}
-        <header className="sticky top-0 z-20 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800">
+        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               {isMobile && (
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="p-2 text-slate-400 hover:text-slate-200"
+                  className="p-2 text-gray-500 hover:text-gray-900"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
               )}
-              <h2 className="text-xl font-bold text-slate-100">
+              <h2 className="text-xl font-bold text-gray-900">
                 {navItems.find((n) => n.id === activeTab)?.label}
               </h2>
             </div>
@@ -400,12 +435,17 @@ export default function HomePage() {
             />
           )}
 
+          {/* Weekly Planner */}
+          {activeTab === 'planner' && (
+            <WeeklyPlanner onExportWeek={handleExportWeek} />
+          )}
+
           {/* Library */}
           {activeTab === 'library' && (
             <div className="space-y-8">
               <LibraryUpload />
-              <div className="border-t border-slate-800 pt-8">
-                <h3 className="text-lg font-semibold text-slate-100 mb-6">
+              <div className="border-t border-gray-200 pt-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">
                   Content Library
                 </h3>
                 <LibraryGallery
@@ -414,13 +454,32 @@ export default function HomePage() {
                   onRefresh={loadLibrary}
                 />
               </div>
-              <div className="border-t border-slate-800 pt-8">
+              <div className="border-t border-gray-200 pt-8">
                 <BrandVoiceProfileView
                   profile={brandProfile}
                   isAnalyzing={isAnalyzing}
                   onAnalyze={handleAnalyzeLibrary}
                 />
               </div>
+            </div>
+          )}
+
+          {/* Cosmos Browser */}
+          {activeTab === 'cosmos' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500">
+                    Browse cosmos.so for vintage film images, select images you like, and generate captions that match each image.
+                  </p>
+                </div>
+              </div>
+              <CosmosBrowser
+                onCarouselCreated={(carouselId) => {
+                  loadCarousels();
+                  addToast('success', 'Carousel created from Cosmos images!');
+                }}
+              />
             </div>
           )}
 
@@ -443,11 +502,11 @@ export default function HomePage() {
                   />
                 ) : carousels.length > 0 ? (
                   <Card variant="bordered" className="p-8 text-center">
-                    <Calendar className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-300 mb-2">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">
                       Select a Carousel
                     </h3>
-                    <p className="text-sm text-slate-500 mb-4">
+                    <p className="text-sm text-gray-500 mb-4">
                       Choose from {carousels.length} generated carousels to preview
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center">
@@ -465,11 +524,11 @@ export default function HomePage() {
                   </Card>
                 ) : (
                   <Card variant="bordered" className="p-8 text-center">
-                    <Sparkles className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-300 mb-2">
+                    <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">
                       No Carousels Yet
                     </h3>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-gray-500">
                       Generate your first carousel using the panel on the left
                     </p>
                   </Card>
@@ -478,7 +537,7 @@ export default function HomePage() {
                 {/* Recent Carousels List */}
                 {carousels.length > 0 && (
                   <Card variant="bordered">
-                    <h3 className="font-semibold text-slate-200 mb-4">
+                    <h3 className="font-semibold text-gray-800 mb-4">
                       Generated Carousels
                     </h3>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -489,15 +548,15 @@ export default function HomePage() {
                           className={cn(
                             'w-full flex items-center justify-between p-3 rounded-lg transition-colors text-left',
                             selectedCarousel?.id === carousel.id
-                              ? 'bg-brand-500/20 border border-brand-500/30'
-                              : 'bg-slate-800/50 hover:bg-slate-800'
+                              ? 'bg-brand-50 border border-brand-200'
+                              : 'bg-gray-50 hover:bg-gray-100'
                           )}
                         >
                           <div>
-                            <p className="text-sm font-medium text-slate-200">
+                            <p className="text-sm font-medium text-gray-800">
                               {formatDate(carousel.date).split(',')[0]}
                             </p>
-                            <p className="text-xs text-slate-400 capitalize">
+                            <p className="text-xs text-gray-500 capitalize">
                               {carousel.theme}
                             </p>
                           </div>
@@ -568,12 +627,12 @@ function DashboardContent({
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <Card variant="gradient" padding="lg" className="relative overflow-hidden">
+      <Card variant="bordered" padding="lg" className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold text-slate-100 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Welcome to Break Free Content System
           </h2>
-          <p className="text-slate-400 mb-6 max-w-xl">
+          <p className="text-gray-600 mb-6 max-w-xl">
             Generate engaging Instagram carousels with humorous running captions
             and epic imagery that matches your brand voice.
           </p>
@@ -588,7 +647,7 @@ function DashboardContent({
             </Button>
           </div>
         </div>
-        <div className="absolute right-0 bottom-0 w-64 h-64 opacity-10">
+        <div className="absolute right-0 bottom-0 w-64 h-64 opacity-5">
           <Zap className="w-full h-full text-brand-500" />
         </div>
       </Card>
@@ -598,14 +657,14 @@ function DashboardContent({
         <Card variant="bordered" className="card-hover">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-slate-400">Library Size</p>
-              <p className="text-3xl font-bold text-slate-100 mt-1">
+              <p className="text-sm text-gray-500">Library Size</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
                 {libraryCount}
               </p>
-              <p className="text-sm text-slate-500 mt-1">images uploaded</p>
+              <p className="text-sm text-gray-400 mt-1">images uploaded</p>
             </div>
-            <div className="p-3 rounded-xl bg-purple-500/20">
-              <Library className="h-6 w-6 text-purple-400" />
+            <div className="p-3 rounded-xl bg-purple-100">
+              <Library className="h-6 w-6 text-purple-600" />
             </div>
           </div>
         </Card>
@@ -613,14 +672,14 @@ function DashboardContent({
         <Card variant="bordered" className="card-hover">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-slate-400">Carousels Generated</p>
-              <p className="text-3xl font-bold text-slate-100 mt-1">
+              <p className="text-sm text-gray-500">Carousels Generated</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
                 {carouselCount}
               </p>
-              <p className="text-sm text-slate-500 mt-1">ready for posting</p>
+              <p className="text-sm text-gray-400 mt-1">ready for posting</p>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/20">
-              <Calendar className="h-6 w-6 text-emerald-400" />
+            <div className="p-3 rounded-xl bg-emerald-100">
+              <Calendar className="h-6 w-6 text-emerald-600" />
             </div>
           </div>
         </Card>
@@ -628,24 +687,24 @@ function DashboardContent({
         <Card variant="bordered" className="card-hover">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-slate-400">Brand Voice</p>
-              <p className="text-3xl font-bold text-slate-100 mt-1">
+              <p className="text-sm text-gray-500">Brand Voice</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
                 {hasProfile ? 'Active' : 'Setup'}
               </p>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-gray-400 mt-1">
                 {hasProfile ? 'profile trained' : 'needs configuration'}
               </p>
             </div>
             <div
               className={cn(
                 'p-3 rounded-xl',
-                hasProfile ? 'bg-brand-500/20' : 'bg-amber-500/20'
+                hasProfile ? 'bg-brand-100' : 'bg-amber-100'
               )}
             >
               <BarChart3
                 className={cn(
                   'h-6 w-6',
-                  hasProfile ? 'text-brand-400' : 'text-amber-400'
+                  hasProfile ? 'text-brand-600' : 'text-amber-600'
                 )}
               />
             </div>
@@ -656,43 +715,53 @@ function DashboardContent({
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card variant="bordered">
-          <h3 className="font-semibold text-slate-200 mb-4">Quick Actions</h3>
+          <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
           <div className="space-y-2">
             <button
               onClick={() => onNavigate('generate')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-left"
             >
-              <Sparkles className="h-5 w-5 text-brand-400" />
+              <Sparkles className="h-5 w-5 text-brand-500" />
               <div>
-                <p className="font-medium text-slate-200">Generate Week</p>
-                <p className="text-sm text-slate-500">Create 7 days of content</p>
+                <p className="font-medium text-gray-800">Generate Week</p>
+                <p className="text-sm text-gray-500">Create 7 days of content</p>
               </div>
             </button>
             <button
               onClick={() => onNavigate('library')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-left"
             >
-              <Upload className="h-5 w-5 text-purple-400" />
+              <Upload className="h-5 w-5 text-purple-500" />
               <div>
-                <p className="font-medium text-slate-200">Upload Images</p>
-                <p className="text-sm text-slate-500">Add to content library</p>
+                <p className="font-medium text-gray-800">Upload Images</p>
+                <p className="text-sm text-gray-500">Add to content library</p>
+              </div>
+            </button>
+            <button
+              onClick={() => onNavigate('cosmos')}
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
+              <Globe className="h-5 w-5 text-cyan-500" />
+              <div>
+                <p className="font-medium text-gray-800">Browse Cosmos</p>
+                <p className="text-sm text-gray-500">Find vintage film images</p>
               </div>
             </button>
             <button
               onClick={() => onNavigate('settings')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-left"
             >
-              <Settings className="h-5 w-5 text-slate-400" />
+              <Settings className="h-5 w-5 text-gray-500" />
               <div>
-                <p className="font-medium text-slate-200">Configure Settings</p>
-                <p className="text-sm text-slate-500">Adjust generation options</p>
+                <p className="font-medium text-gray-800">Configure Settings</p>
+                <p className="text-sm text-gray-500">Adjust generation options</p>
               </div>
             </button>
           </div>
         </Card>
 
         <Card variant="bordered">
-          <h3 className="font-semibold text-slate-200 mb-4">Recent Carousels</h3>
+          <h3 className="font-semibold text-gray-800 mb-4">Recent Carousels</h3>
           {recentCarousels.length > 0 ? (
             <div className="space-y-2">
               {recentCarousels.map((carousel) => (
@@ -702,13 +771,13 @@ function DashboardContent({
                     onViewCarousel(carousel);
                     onNavigate('generate');
                   }}
-                  className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors text-left"
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                 >
                   <div>
-                    <p className="font-medium text-slate-200 capitalize">
+                    <p className="font-medium text-gray-800 capitalize">
                       {carousel.theme}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-gray-500">
                       {formatDate(carousel.date).split(',')[0]}
                     </p>
                   </div>
@@ -724,7 +793,7 @@ function DashboardContent({
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8 text-gray-400">
               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No carousels generated yet</p>
             </div>
@@ -746,10 +815,10 @@ function SettingsContent({
   return (
     <div className="max-w-2xl space-y-6">
       <Card variant="bordered">
-        <h3 className="font-semibold text-slate-200 mb-6">Image Generation</h3>
+        <h3 className="font-semibold text-gray-800 mb-6">Image Generation</h3>
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               Default Image Mode
             </label>
             <div className="flex gap-3">
@@ -758,12 +827,12 @@ function SettingsContent({
                 className={cn(
                   'flex-1 p-4 rounded-lg border transition-all',
                   settings.imageMode === 'stock'
-                    ? 'border-brand-500 bg-brand-500/10'
-                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                 )}
               >
-                <p className="font-medium text-slate-200">Stock Photos</p>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="font-medium text-gray-800">Stock Photos</p>
+                <p className="text-sm text-gray-500 mt-1">
                   Use Pexels & Unsplash (Free)
                 </p>
               </button>
@@ -772,13 +841,13 @@ function SettingsContent({
                 className={cn(
                   'flex-1 p-4 rounded-lg border transition-all',
                   settings.imageMode === 'ai'
-                    ? 'border-brand-500 bg-brand-500/10'
-                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                 )}
               >
-                <p className="font-medium text-slate-200">AI Generated</p>
-                <p className="text-sm text-slate-400 mt-1">
-                  Use DALL-E 3 (Paid)
+                <p className="font-medium text-gray-800">AI Generated</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Use Flux Pro 1.1 (Paid)
                 </p>
               </button>
             </div>
@@ -786,7 +855,7 @@ function SettingsContent({
 
           {settings.imageMode === 'stock' && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Stock Photo Source
               </label>
               <select
@@ -796,7 +865,7 @@ function SettingsContent({
                     stockSource: e.target.value as 'pexels' | 'unsplash' | 'both',
                   })
                 }
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-800"
               >
                 <option value="both">Both (Pexels + Unsplash)</option>
                 <option value="pexels">Pexels Only</option>
@@ -807,7 +876,7 @@ function SettingsContent({
 
           {settings.imageMode === 'ai' && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Image Quality
               </label>
               <select
@@ -817,7 +886,7 @@ function SettingsContent({
                     imageQuality: e.target.value as 'standard' | 'hd',
                   })
                 }
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-800"
               >
                 <option value="standard">Standard</option>
                 <option value="hd">HD (Higher cost)</option>
@@ -828,14 +897,14 @@ function SettingsContent({
       </Card>
 
       <Card variant="bordered">
-        <h3 className="font-semibold text-slate-200 mb-6">Brand Voice</h3>
+        <h3 className="font-semibold text-gray-800 mb-6">Brand Voice</h3>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-gray-700">
                 Voice Strictness
               </label>
-              <span className="text-sm font-medium text-brand-400">
+              <span className="text-sm font-medium text-brand-600">
                 {settings.brandVoiceStrictness}%
               </span>
             </div>
@@ -849,9 +918,9 @@ function SettingsContent({
                   brandVoiceStrictness: Number(e.target.value),
                 })
               }
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-500"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
             />
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-gray-500 mt-2">
               Higher = closer match to library style. Lower = more creative variation.
             </p>
           </div>
@@ -859,25 +928,25 @@ function SettingsContent({
       </Card>
 
       <Card variant="bordered">
-        <h3 className="font-semibold text-slate-200 mb-4">API Configuration</h3>
-        <p className="text-sm text-slate-400 mb-4">
+        <h3 className="font-semibold text-gray-800 mb-4">API Configuration</h3>
+        <p className="text-sm text-gray-500 mb-4">
           Configure your API keys in the <code>.env.local</code> file.
         </p>
         <div className="space-y-3 text-sm">
-          <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-            <span className="text-slate-300">Anthropic (Claude)</span>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-gray-700">Anthropic (Claude)</span>
             <Badge variant="success" size="sm">Required</Badge>
           </div>
-          <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-            <span className="text-slate-300">OpenAI (DALL-E)</span>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-gray-700">Replicate (Flux Pro)</span>
             <Badge variant="info" size="sm">For AI Images</Badge>
           </div>
-          <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-            <span className="text-slate-300">Pexels</span>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-gray-700">Pexels</span>
             <Badge variant="info" size="sm">For Stock Photos</Badge>
           </div>
-          <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-            <span className="text-slate-300">Unsplash</span>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span className="text-gray-700">Unsplash</span>
             <Badge variant="info" size="sm">For Stock Photos</Badge>
           </div>
         </div>

@@ -345,8 +345,8 @@ export function LibraryUpload() {
             'flex flex-col items-center justify-center p-12 cursor-pointer transition-all duration-300',
             'border-2 border-dashed rounded-xl',
             isDragActive
-              ? 'border-brand-500 bg-brand-500/10'
-              : 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/30'
+              ? 'border-brand-500 bg-brand-50'
+              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
           )}
         >
           <input {...getInputProps()} />
@@ -357,22 +357,22 @@ export function LibraryUpload() {
             }}
             className="mb-4"
           >
-            <div className="p-4 rounded-full bg-slate-800">
+            <div className="p-4 rounded-full bg-gray-100">
               <Upload
                 className={cn(
                   'h-8 w-8 transition-colors',
-                  isDragActive ? 'text-brand-500' : 'text-slate-400'
+                  isDragActive ? 'text-brand-500' : 'text-gray-400'
                 )}
               />
             </div>
           </motion.div>
-          <p className="text-lg font-medium text-slate-200 mb-2">
+          <p className="text-lg font-medium text-gray-900 mb-2">
             {isDragActive ? 'Drop your images here' : 'Drag & drop images here'}
           </p>
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-sm text-gray-500 mb-4">
             or click to browse your files
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-gray-400">
             Supports JPG, PNG, WebP up to 10MB each
           </p>
         </div>
@@ -390,8 +390,8 @@ export function LibraryUpload() {
             {/* Summary Stats */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <span className="text-slate-300">
-                  <span className="font-semibold text-slate-100">{files.length}</span>{' '}
+                <span className="text-gray-600">
+                  <span className="font-semibold text-gray-900">{files.length}</span>{' '}
                   images selected
                 </span>
                 {successCount > 0 && (
@@ -470,18 +470,18 @@ export function LibraryUpload() {
                       className={cn(
                         'absolute inset-0 flex items-center justify-center transition-opacity',
                         item.status === 'pending' && 'bg-transparent',
-                        item.status === 'compressing' && 'bg-slate-900/70',
-                        item.status === 'uploading' && 'bg-slate-900/70',
-                        item.status === 'processing' && 'bg-slate-900/70',
-                        item.status === 'complete' && 'bg-emerald-900/30',
-                        item.status === 'error' && 'bg-red-900/50',
-                        item.status === 'duplicate' && 'bg-amber-900/50'
+                        item.status === 'compressing' && 'bg-white/70',
+                        item.status === 'uploading' && 'bg-white/70',
+                        item.status === 'processing' && 'bg-white/70',
+                        item.status === 'complete' && 'bg-emerald-500/20',
+                        item.status === 'error' && 'bg-red-500/20',
+                        item.status === 'duplicate' && 'bg-amber-500/20'
                       )}
                     >
                       {item.status === 'compressing' && (
                         <div className="text-center">
-                          <Loader2 className="h-6 w-6 text-amber-500 animate-spin mx-auto mb-2" />
-                          <p className="text-xs text-amber-300">Compressing...</p>
+                          <Loader2 className="h-6 w-6 text-amber-600 animate-spin mx-auto mb-2" />
+                          <p className="text-xs text-amber-700">Compressing...</p>
                         </div>
                       )}
                       {item.status === 'uploading' && (
@@ -490,7 +490,7 @@ export function LibraryUpload() {
                       {item.status === 'processing' && (
                         <div className="text-center">
                           <Loader2 className="h-6 w-6 text-brand-500 animate-spin mx-auto mb-2" />
-                          <p className="text-xs text-slate-300">Extracting caption...</p>
+                          <p className="text-xs text-gray-700">Extracting caption...</p>
                         </div>
                       )}
                       {item.status === 'complete' && (
@@ -502,14 +502,14 @@ export function LibraryUpload() {
                       )}
                       {item.status === 'error' && (
                         <div className="text-center p-2">
-                          <AlertCircle className="h-6 w-6 text-red-400 mx-auto mb-1" />
-                          <p className="text-xs text-red-300">{item.error}</p>
+                          <AlertCircle className="h-6 w-6 text-red-500 mx-auto mb-1" />
+                          <p className="text-xs text-red-700">{item.error}</p>
                         </div>
                       )}
                       {item.status === 'duplicate' && (
                         <div className="text-center p-2">
-                          <Copy className="h-6 w-6 text-amber-400 mx-auto mb-1" />
-                          <p className="text-xs text-amber-300">Already in library</p>
+                          <Copy className="h-6 w-6 text-amber-600 mx-auto mb-1" />
+                          <p className="text-xs text-amber-700">Already in library</p>
                         </div>
                       )}
                     </div>
@@ -518,7 +518,7 @@ export function LibraryUpload() {
                     {item.status === 'pending' && (
                       <button
                         onClick={() => removeFile(index)}
-                        className="absolute top-2 right-2 p-1 rounded-full bg-slate-900/80 text-slate-400 hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 p-1 rounded-full bg-white/80 text-gray-500 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -526,8 +526,8 @@ export function LibraryUpload() {
 
                     {/* Caption Preview */}
                     {item.status === 'complete' && item.extractedCaption && (
-                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-slate-900/90 to-transparent">
-                        <p className="text-xs text-slate-200 line-clamp-2">
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
+                        <p className="text-xs text-white line-clamp-2">
                           "{item.extractedCaption}"
                         </p>
                         <div className="flex gap-1 mt-1">
@@ -547,7 +547,7 @@ export function LibraryUpload() {
                   </Card>
 
                   {/* File Name */}
-                  <p className="mt-2 text-xs text-slate-500 truncate">
+                  <p className="mt-2 text-xs text-gray-500 truncate">
                     {item.file.name}
                   </p>
                 </motion.div>
@@ -560,11 +560,11 @@ export function LibraryUpload() {
       {/* Empty State */}
       {files.length === 0 && (
         <Card variant="bordered" className="text-center">
-          <FileImage className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-300 mb-2">
+          <FileImage className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
             No images uploaded yet
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-gray-500">
             Upload your existing content library to train the caption generator
           </p>
         </Card>

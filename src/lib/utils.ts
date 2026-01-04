@@ -163,6 +163,17 @@ export function sanitizeFilename(name: string): string {
 }
 
 /**
+ * Convert string to URL-friendly slug
+ */
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50);
+}
+
+/**
  * Get image dimensions from base64
  */
 export function getImageDimensions(

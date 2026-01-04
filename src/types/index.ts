@@ -81,7 +81,7 @@ export interface GeneratedImage {
   id: string;
   url: string;
   localPath?: string;
-  source: 'dalle' | 'pexels' | 'unsplash' | 'midjourney';
+  source: 'dalle' | 'flux' | 'pexels' | 'unsplash' | 'cosmos' | 'midjourney';
   prompt?: string;
   searchQuery?: string;
   attribution?: string;
@@ -147,4 +147,56 @@ export interface ExportOptions {
   includeMetadata: boolean;
   namingConvention: 'date-index' | 'theme-index' | 'caption-preview';
   captionFormat: 'json' | 'csv' | 'txt';
+}
+
+// Weekly Planner Types
+export type TextPosition = 'bottom' | 'top' | 'left' | 'right';
+export type TextColorOption = 'black' | 'white' | 'accent';
+export type TextAlignment = 'left' | 'center' | 'right';
+
+export interface OverlaySettings {
+  // Text positioning (percentage-based, 0-100)
+  x: number;           // Horizontal position (% from left)
+  y: number;           // Vertical position (% from top)
+  fontSize: number;    // Font size in pixels (24-96)
+  width: number;       // Text box width as % of canvas (20-100)
+  textAlign: TextAlignment;
+  textColor: TextColorOption;
+  accentColor?: string;
+
+  // Image transform settings (for crop/zoom control)
+  imageScale?: number;      // Zoom level (1.0 = minimum to cover canvas, higher = more zoomed)
+  imageOffsetX?: number;    // Horizontal pan (% of overflow, -50 to 50)
+  imageOffsetY?: number;    // Vertical pan (% of overflow, -50 to 50)
+}
+
+export interface SelectedImage {
+  id: string;
+  cosmosId: number;
+  url: string;
+  highResUrl: string;
+  captionOptions: GeneratedCaption[];
+  selectedCaption: GeneratedCaption | null;
+  overlaySettings: OverlaySettings;
+  processedImageBase64?: string;
+}
+
+export type DayStatus = 'pending' | 'images-selected' | 'captions-generated' | 'captions-selected' | 'complete';
+
+export interface DayContent {
+  date: string;
+  dayOfWeek: string;
+  images: SelectedImage[];
+  status: DayStatus;
+}
+
+export type WeekStatus = 'in-progress' | 'complete' | 'exported';
+
+export interface WeekPlan {
+  id: string;
+  weekStartDate: string;
+  days: DayContent[];
+  status: WeekStatus;
+  createdAt: string;
+  updatedAt: string;
 }

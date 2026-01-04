@@ -1,99 +1,76 @@
 /**
  * Image Service
  * Handles image sourcing from:
- * - DALL-E 3 (AI generation)
+ * - Flux Pro 1.1 (AI generation via Replicate)
  * - Pexels API (stock photos)
  * - Unsplash API (stock photos)
  */
 
-import OpenAI from 'openai';
+import Replicate from 'replicate';
 import type { GeneratedImage, BrandVoiceProfile } from '@/types';
 import { generateId } from '@/lib/utils';
 
-// Initialize clients
-const getOpenAIClient = () => {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured');
+// Initialize Replicate client
+const getReplicateClient = () => {
+  const apiToken = process.env.REPLICATE_API_TOKEN;
+  if (!apiToken) {
+    throw new Error('REPLICATE_API_TOKEN is not configured');
   }
-  return new OpenAI({ apiKey });
+  return new Replicate({ auth: apiToken });
 };
 
 // =====================================
-// DALL-E Image Generation
+// Flux Pro 1.1 Image Generation (Replicate)
 // =====================================
 
 /**
- * Generate an image using DALL-E 3
+ * Generate an image using Flux Pro 1.1 via Replicate
+ * Produces cinematic, film-like imagery with authentic vintage movie aesthetics
+ * @param sceneDescription - Detailed scene description from Claude
  */
-export async function generateDalleImage(
-  theme: string,
-  caption: string,
-  brandProfile: BrandVoiceProfile | null,
-  quality: 'standard' | 'hd' = 'standard'
+export async function generateFluxImage(
+  sceneDescription: string
 ): Promise<GeneratedImage> {
-  const client = getOpenAIClient();
+  const client = getReplicateClient();
 
-  // Build the prompt based on theme, caption, and brand aesthetics
-  const aesthetics = brandProfile?.aestheticPreferences?.slice(0, 3).join(', ') || 
-    'epic, cinematic, surreal';
-  
-  const prompt = buildDallePrompt(theme, caption, aesthetics);
+  // Build prompt with cinematic film styling
+  const prompt = `${sceneDescription}
+
+Shot on 35mm film, anamorphic lens, cinematic lighting. The scene has the quality of a film still from a classic movie - natural grain, authentic colors, dramatic composition. Professional cinematography, Kodak film stock aesthetic.`;
 
   try {
-    const response = await client.images.generate({
-      model: 'dall-e-3',
-      prompt,
-      n: 1,
-      size: '1024x1024',
-      quality,
-      style: 'vivid',
-    });
+    const output = await client.run(
+      'black-forest-labs/flux-1.1-pro',
+      {
+        input: {
+          prompt,
+          aspect_ratio: '1:1',
+          output_format: 'webp',
+          output_quality: 90,
+          safety_tolerance: 2,
+          prompt_upsampling: true,
+        },
+      }
+    );
 
-    const imageUrl = response.data?.[0]?.url;
-    if (!imageUrl) {
-      throw new Error('No image URL returned from DALL-E');
+    // Flux returns a URL string directly
+    const imageUrl = typeof output === 'string' ? output : String(output);
+
+    if (!imageUrl || !imageUrl.startsWith('http')) {
+      throw new Error('Invalid image URL returned from Flux');
     }
 
     return {
       id: generateId(),
       url: imageUrl,
-      source: 'dalle',
+      source: 'flux',
       prompt,
       regenerationCount: 0,
     };
   } catch (error) {
-    console.error('DALL-E generation error:', error);
+    console.error('Flux generation error:', error);
     throw error;
   }
-}
-
-/**
- * Build an optimized DALL-E prompt
- */
-function buildDallePrompt(theme: string, caption: string, aesthetics: string): string {
-  // Extract the scenario from the caption for context
-  const captionContext = caption.toLowerCase();
-  
-  // Base prompt structure
-  let prompt = `Create a ${aesthetics} photograph featuring ${theme}. `;
-  
-  // Add mood based on caption
-  if (captionContext.includes('after') || captionContext.includes('post')) {
-    prompt += 'The scene should convey a sense of accomplishment and exhaustion. ';
-  } else if (captionContext.includes('during') || captionContext.includes('trying')) {
-    prompt += 'The scene should convey struggle and determination. ';
-  } else if (captionContext.includes('when') || captionContext.includes('realizing')) {
-    prompt += 'The scene should convey a moment of revelation or surprise. ';
-  }
-
-  // Style requirements
-  prompt += `Style: Professional photography, dramatic lighting, high contrast, `;
-  prompt += `suitable for Instagram. `;
-  prompt += `The image should be visually striking and scroll-stopping. `;
-  prompt += `No text or words in the image.`;
-
-  return prompt;
 }
 
 // =====================================
